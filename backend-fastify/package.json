@@ -29,7 +29,7 @@
     "fastify": "4.28.0",
     "fastify-bcrypt": "^1.0.1",
     "mongoose": "^7.3.1",
-    "uuid": "^8.3.2"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@types/busboy": "^0.3.1",
