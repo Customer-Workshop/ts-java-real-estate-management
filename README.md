@@ -176,3 +176,96 @@ dummy user:
 /properties/
 /enquiries/
 ```
+
+# **🔄 CI / CD**
+
+## Continuous integration — `.github/workflows/ci.yml`
+
+Runs on pushes to `main`/`master`, on every pull request, and on manual dispatch.
+A `dorny/paths-filter` job decides which side of the repo needs to run, so a
+frontend-only change skips the backend suite and vice versa. The aggregate
+`CI status` job always runs and treats skipped jobs as success — make that the
+single required status check in branch protection.
+
+| Job | What it does |
+| --- | --- |
+| `Frontend (lint)` | `npm run lint` (Angular ESLint) |
+| `Frontend (typecheck)` | `npm run typecheck` (`tsc -p tsconfig.app.json --noEmit`) |
+| `Frontend (test)` | `npm run test:ci` — Karma/Jasmine in headless Chrome with coverage, uploaded as `frontend-coverage` |
+| `Frontend (build)` | `npm run build:prod` — production Angular build, uploaded as `frontend-dist` |
+| `Backend` | `npm run lint`, `npm test` (Node test runner against a `mongo:7` service container) and a boot/HTTP smoke check |
+| `Dependency audit` | `npm audit --audit-level=high` per workspace, advisory only |
+| `Dependency review` | `actions/dependency-review-action` on pull requests, fails on new high-severity dependencies |
+| `CI status` | Aggregate gate for branch protection |
+
+Notes:
+
+- Node version comes from `.nvmrc`; npm caching is keyed per workspace lockfile.
+- `Frontend (test)` is currently non-blocking: three specs import
+  `src/app/shared/directives/custom-validators.directive`, which was deleted in
+  commit `8009526`, and `src/test.ts` still imports `zone.js/dist/zone-testing`
+  (removed in zone.js 0.15). Fix those and drop the `continue-on-error` flag.
+- `Dependency audit` is non-blocking because both workspaces already carry known
+  high/critical transitive advisories; results are written to the job summary.
+
+## Continuous deployment — `.github/workflows/cd.yml`
+
+**This pipeline is a mocked demo. Every AWS identifier in it is a placeholder
+and no step touches real infrastructure.**
+
+Flow: build the frontend and backend container images (real `docker build`,
+artifacts only) → deploy job bound to a GitHub environment → push to Amazon ECR
+→ roll ECS services → optional S3 + CloudFront publish of the static Angular
+bundle. An EKS variant is included as commented reference commands.
+
+Three independent guards keep it inert:
+
+1. `workflow_dispatch` only — it never triggers on push or merge.
+2. The `dry_run` input defaults to `true`; a dry run prints the AWS commands.
+3. Even with `dry_run=false`, the run stays in dry-run mode unless the
+   repository variable `ALLOW_REAL_DEPLOY` is `true`.
+
+Mocked placeholder values (in the workflow `env:` block):
+
+| Key | Placeholder |
+| --- | --- |
+| `AWS_ACCOUNT_ID` / `ECR_REGISTRY` | `123456789012` / `123456789012.dkr.ecr.us-east-1.amazonaws.com` |
+| `AWS_REGION` | `us-east-1` |
+| `ECR_REPOSITORY_FRONTEND` / `_BACKEND` | `demo-real-estate/frontend` / `demo-real-estate/backend` |
+| `ECS_CLUSTER` / services | `demo-real-estate-cluster` / `demo-real-estate-frontend`, `demo-real-estate-backend` |
+| `K8S_NAMESPACE` | `demo-real-estate` |
+| `OIDC_ROLE_ARN` | `arn:aws:iam::123456789012:role/demo-real-estate-github-deploy` |
+| `STATIC_BUCKET` / `CLOUDFRONT_DISTRIBUTION_ID` | `s3://demo-real-estate-web` / `E123456789ABCD` |
+
+### Required configuration for a real deployment
+
+No repository *secrets* are needed — authentication uses GitHub OIDC
+(`permissions: id-token: write`) via `aws-actions/configure-aws-credentials`.
+
+| Type | Name | Purpose |
+| --- | --- | --- |
+| Repository variable | `ALLOW_REAL_DEPLOY` | Must be `true` to leave dry-run mode |
+| Environment | `staging` | Auto-deploy target |
+| Environment | `production` | Configure required reviewers so promotion needs approval |
+| AWS IAM role | replaces `OIDC_ROLE_ARN` | Trust policy for `token.actions.githubusercontent.com`, scoped to this repo; permissions for ECR push, `ecs:UpdateService`, and (optional) S3 + CloudFront |
+
+Replace the `env:` placeholders with real account, region, repository, cluster
+and distribution values before enabling `ALLOW_REAL_DEPLOY`.
+
+## Container images
+
+- `frontend/Dockerfile` — Node 22 build of the production Angular bundle, served
+  by nginx (`frontend/nginx.conf`, SPA fallback to `index.html`), port 80.
+- `backend-fastify/Dockerfile` — Node 22 runtime, non-root, port 8000,
+  configured through the environment variables in `.env.example`.
+
+```
+docker build -t rem-frontend frontend
+docker build -t rem-backend backend-fastify
+```
+
+## Dependency updates
+
+`.github/dependabot.yml` schedules weekly updates for npm (`frontend/` and
+`backend-fastify/`, with Angular/Ionic/Fastify update groups), GitHub Actions,
+and the Dockerfile base images.

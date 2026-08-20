@@ -1,0 +1,56 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies, frontend]
+    commit-message:
+      prefix: 'chore(deps,frontend)'
+    groups:
+      angular:
+        patterns: ['@angular*', '@angular-eslint/*', '@angular-devkit/*']
+      ionic-capacitor:
+        patterns: ['@ionic/*', '@capacitor/*']
+      dev-dependencies:
+        dependency-type: development
+
+  - package-ecosystem: npm
+    directory: /backend-fastify
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies, backend]
+    commit-message:
+      prefix: 'chore(deps,backend)'
+    groups:
+      fastify:
+        patterns: ['fastify', '@fastify/*', 'fastify-*']
+      dev-dependencies:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, ci]
+    commit-message:
+      prefix: 'chore(deps,actions)'
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: docker
+    directories:
+      - /frontend
+      - /backend-fastify
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, docker]
+    commit-message:
+      prefix: 'chore(deps,docker)'
