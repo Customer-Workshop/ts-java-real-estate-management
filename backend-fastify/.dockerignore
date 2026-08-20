@@ -1,0 +1,7 @@
+node_modules
+reports
+coverage
+.env
+.git
+Dockerfile
+.dockerignore

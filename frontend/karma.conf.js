@@ -29,8 +29,17 @@ module.exports = function (config) {
       subdir: '.',
       reporters: [
         { type: 'html' },
+        { type: 'lcovonly' },
+        { type: 'cobertura' },
         { type: 'text-summary' }
       ]
+    },
+    customLaunchers: {
+      // Sandboxing is unavailable inside CI containers.
+      ChromeHeadlessCI: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+      }
     },
     reporters: ['progress', 'kjhtml'],
     port: 9876,

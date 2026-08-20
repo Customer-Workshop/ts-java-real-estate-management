@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      angular:
+        patterns: ['@angular*', '@ngx*', 'zone.js']
+      dev-dependencies:
+        dependency-type: development
+
+  - package-ecosystem: npm
+    directory: /backend-fastify
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      fastify:
+        patterns: ['fastify', '@fastify/*', 'fastify-*']
+      dev-dependencies:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # The only Gradle/Java surface is the Capacitor Android wrapper.
+  - package-ecosystem: gradle
+    directory: /frontend/android
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3

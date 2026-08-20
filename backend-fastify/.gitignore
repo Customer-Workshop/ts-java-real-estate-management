@@ -2,3 +2,5 @@
 /uploads/*
 !/uploads/placeholder.jpeg
 .env
+/reports
+/coverage
