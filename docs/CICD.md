@@ -46,7 +46,8 @@ the baseline repository, independently of CI:
 - `@types/jasmine` is not installed, so every spec fails to typecheck.
 
 Fix those, then remove `soft_fail: true` from the `test` matrix entry in
-`ci.yml` to make the job blocking.
+`ci.yml` (it drives `continue-on-error` on the run step) to make the check
+blocking.
 
 ## CD pipeline
 
