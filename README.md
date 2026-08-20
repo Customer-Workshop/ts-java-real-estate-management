@@ -205,8 +205,11 @@ Notes:
   `src/app/shared/directives/custom-validators.directive`, which was deleted in
   commit `8009526`, and `src/test.ts` still imports `zone.js/dist/zone-testing`
   (removed in zone.js 0.15). Fix those and drop the `continue-on-error` flag.
-- `Dependency audit` is non-blocking because both workspaces already carry known
+- `Dependency audit` is advisory-only because both workspaces already carry known
   high/critical transitive advisories; results are written to the job summary.
+- `Dependency review` is also non-blocking today: GitHub's Dependency graph is
+  disabled for this repository, so the action cannot run. Enable it under
+  Settings → Code security and drop the step's `continue-on-error`.
 
 ## Continuous deployment — `.github/workflows/cd.yml`
 
