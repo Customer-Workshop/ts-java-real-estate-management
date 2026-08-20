@@ -116,6 +116,14 @@ definition / SSM Parameter Store, not in Actions secrets.
 - `backend-fastify/Dockerfile` — `node:22-alpine`, production-only deps,
   runs as the non-root `node` user on port 8000.
 
+Two runtime knobs matter for the containerised backend:
+
+- `HOST` (default `0.0.0.0`) — the server previously bound loopback only, which
+  made published container ports unreachable.
+- `CORS_ORIGINS` — comma separated allowlist; without it only
+  `http://localhost:{9000,8100,4200}` are accepted, so a frontend container
+  published on any other port gets CORS errors.
+
 ## Running the same checks locally
 
 ```bash

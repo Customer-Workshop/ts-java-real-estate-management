@@ -67,6 +67,8 @@ mongoose
       fastify.listen(
         {
           port: PORT,
+          // Bind all interfaces so the server is reachable when containerised.
+          host: process.env.HOST || "0.0.0.0",
         },
         () => {
           console.log("Listening on PORT: " + PORT);
